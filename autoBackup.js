@@ -1,8 +1,8 @@
 const fs = require('fs');
 const _ = require('lodash');
-const util = require('util');
-const exec = util.promisify(require('child_process').exec);
-// const exec = require('child_process').exec;
+// const util = require('util');
+// const exec = util.promisify(require('child_process').exec);
+const exec = require('child_process').exec;
 const dbOptions = {
     user: '',
     pass: '',
@@ -10,7 +10,7 @@ const dbOptions = {
     port: 27017,
     database: 'FACTU',
     autoBackup: true,
-    removeOldBackup: false,
+    removeOldBackup: true,
     keepLastDaysBackup: 7,
     autoBackupPath: process.cwd() + '/backups' // i.e. /let/database-backup/
 };
@@ -38,6 +38,7 @@ const empty = (mixedlet) => {
 exports.empty = empty;
 // Auto backup script
 exports.dbAutoBackUp = () => {
+    console.log("Database Backup job started");
     // check for auto backup is enabled or disabled
     if (!dbOptions?.autoBackup)
         return;
@@ -54,34 +55,48 @@ exports.dbAutoBackUp = () => {
         oldBackupPath = `${dbOptions.autoBackupPath}/${oldBackupDir}`; // old backup(after keeping # of days)
     }
     let cmd = `mongodump --host ${dbOptions.host} --port ${dbOptions.port} --db ${dbOptions.database}${dbOptions.user ? ' --username ' + dbOptions.user : ""}${dbOptions.pass ? ' --password ' + dbOptions.pass : ""} --out ${newBackupPath} `; // Command for mongodb dump process
+    // console.log("running commands.")
     console.time("Database Backup Took:")
-    try {
-
-        const result = await exec(cmd)/*, (error, stdout, stderr) => {
-        console.timeEnd("Database Backup Took:")
-        console.log(error)
-        if (empty(error)) {
-            // check for remove old backup after keeping # of days given in configuration
-            if (dbOptions.removeOldBackup) {
-                if (fs.existsSync(oldBackupPath)) {
-                    exec("rm -rf " + oldBackupPath, function (err) { });
-                }
+    exec(cmd, (error, stdout, stderr) => {
+        if (error) {
+            console.error(`Error: ${error}`);
+            console.timeEnd("Database Backup Took:");
+            return;
+        }
+        console.log(`Database Backup Successfully Completed`);
+        console.timeEnd("Database Backup Took:");
+        // check for remove old backup after keeping # of days given in configuration
+        if (dbOptions.removeOldBackup) {
+            // check for old backup directory exists or not
+            // console.log(oldBackupPath, fs.existsSync(oldBackupPath));
+            if (fs.existsSync(oldBackupPath)) {
+                console.log(`Removing old backup directory: ${oldBackupPath}`);
+                // remove old backup directory
+                fs.rmSync(oldBackupPath, { recursive: true });
             }
         }
-    });*/
-        console.timeEnd("Database Backup Took:")
-        console.log(result.error)
-        if (empty(result.error)) {
-            // check for remove old backup after keeping # of days given in configuration
-            if (dbOptions.removeOldBackup) {
-                if (fs.existsSync(oldBackupPath)) {
-                    exec("rm -rf " + oldBackupPath, function (err) { });
-                }
-            }
-        }
-    } catch (e) {
-        console.log("backup error", e)
-        console.timeEnd("Database Backup Took:")
+    });
 
-    }
+    // try {
+    //     const { stderr, stdout } = await exec(cmd);
+    //     console.timeEnd("Database Backup Took:")
+    //     console.log({ stderr, stdout })
+    //     if (!dbOptions?.removeOldBackup)
+    //         return console.log(`Database backup created at ${newBackupPath}`);
+    //     // check for remove old backup after keeping # of days given in configuration
+    //     if (fs.existsSync(oldBackupPath)) {
+    //         try {
+    //             const removeRes = await exec("rm -rf " + oldBackupPath);
+    //             console.log({ removeRes });
+    //             console.log("Old backup removed: " + oldBackupPath);
+    //         } catch (e) {
+    //             console.log("removing error", e)
+    //         }
+    //     }
+
+    //     return console.log(`Database backup created at ${newBackupPath}`);
+    // } catch (e) {
+    //     console.log("backup error", e)
+    //     console.timeEnd("Database Backup Took:")
+    // }
 }
