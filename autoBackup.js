@@ -3,17 +3,6 @@ const _ = require('lodash');
 const config = require('./config');
 const exec = require('child_process').exec;
 const { dbOptions } = config;
-// const dbOptions = {
-//     user: '',
-//     pass: '',
-//     host: 'localhost',
-//     port: 27017,
-//     database: 'FACTU',
-//     autoBackup: true,
-//     removeOldBackup: true,
-//     keepLastDaysBackup: 7,
-//     autoBackupPath: process.cwd() + '/backups' // i.e. /let/database-backup/
-// };
 
 /* return if letiable is empty or not. */
 const empty = (mixedlet) => {
@@ -60,7 +49,6 @@ exports.dbAutoBackUp = () => {
         `${dbOptions.pass ? ' -p=' + dbOptions.pass : ""}`,
         ` --dumpDbUsersAndRoles --gzip --out ${newBackupPath}`); // Command for mongodb dump process
 
-    // console.log("running commands.")
     console.time("Database Backup Took:")
     exec(cmd, (error, stdout, stderr) => {
         if (error) {
