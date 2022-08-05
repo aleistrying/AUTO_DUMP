@@ -44,10 +44,10 @@ exports.dbAutoBackUp = () => {
         ` --port ${dbOptions.port}`,
         ` -d ${dbOptions.database}`,
         `${dbOptions.database ? ` --authenticationDatabase=${dbOptions.database}` : ""}`,
-        `${dbOptions.user ? " --authenticationMechanism=SCRAM-SHA-256" : ""}`,
+        `${dbOptions.user ? ` --authenticationMechanism=${dbOptions.authenticationMechanism}` : ""}`,
         `${dbOptions.user ? ' -u=' + dbOptions.user : ""}`,
         `${dbOptions.pass ? ' -p=' + dbOptions.pass : ""}`,
-        ` --dumpDbUsersAndRoles --gzip --out ${newBackupPath}`); // Command for mongodb dump process
+        ` --dumpDbUsersAndRoles${dbOptions.gzipped ? " --gzip" : ""} --out ${newBackupPath}`); // Command for mongodb dump process
 
     console.time("Database Backup Took:")
     exec(cmd, (error, stdout, stderr) => {
