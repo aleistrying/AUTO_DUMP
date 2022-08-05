@@ -1,23 +1,20 @@
 const fs = require('fs');
 const _ = require('lodash');
-// const util = require('util');
-// const exec = util.promisify(require('child_process').exec);
+const config = require('./config');
 const exec = require('child_process').exec;
-const dbOptions = {
-    user: '',
-    pass: '',
-    host: 'localhost',
-    port: 27017,
-    database: 'FACTU',
-    autoBackup: true,
-    removeOldBackup: true,
-    keepLastDaysBackup: 7,
-    autoBackupPath: process.cwd() + '/backups' // i.e. /let/database-backup/
-};
-/* return date object */
-// exports.stringToDate = (dateString) => {
-//     return new Date(dateString);
+const { dbOptions } = config;
+// const dbOptions = {
+//     user: '',
+//     pass: '',
+//     host: 'localhost',
+//     port: 27017,
+//     database: 'FACTU',
+//     autoBackup: true,
+//     removeOldBackup: true,
+//     keepLastDaysBackup: 7,
+//     autoBackupPath: process.cwd() + '/backups' // i.e. /let/database-backup/
 // };
+
 /* return if letiable is empty or not. */
 const empty = (mixedlet) => {
     let undef, key, i, len;
@@ -54,7 +51,15 @@ exports.dbAutoBackUp = () => {
         oldBackupDir = `${beforeDate.getFullYear()}-${beforeDate.getMonth() + 1}-${beforeDate.getDate()}`;
         oldBackupPath = `${dbOptions.autoBackupPath}/${oldBackupDir}`; // old backup(after keeping # of days)
     }
-    let cmd = `mongodump --host ${dbOptions.host} --port ${dbOptions.port} --db ${dbOptions.database}${dbOptions.user ? ' --username ' + dbOptions.user : ""}${dbOptions.pass ? ' --password ' + dbOptions.pass : ""} --out ${newBackupPath} `; // Command for mongodb dump process
+    let cmd = "mongodump".concat(` --host ${dbOptions.host}`,
+        ` --port ${dbOptions.port}`,
+        ` -d ${dbOptions.database}`,
+        `${dbOptions.database ? ` --authenticationDatabase=${dbOptions.database}` : ""}`,
+        `${dbOptions.user ? " --authenticationMechanism=SCRAM-SHA-256" : ""}`,
+        `${dbOptions.user ? ' -u=' + dbOptions.user : ""}`,
+        `${dbOptions.pass ? ' -p=' + dbOptions.pass : ""}`,
+        ` --dumpDbUsersAndRoles --gzip --out ${newBackupPath}`); // Command for mongodb dump process
+
     // console.log("running commands.")
     console.time("Database Backup Took:")
     exec(cmd, (error, stdout, stderr) => {
@@ -76,27 +81,4 @@ exports.dbAutoBackUp = () => {
             }
         }
     });
-
-    // try {
-    //     const { stderr, stdout } = await exec(cmd);
-    //     console.timeEnd("Database Backup Took:")
-    //     console.log({ stderr, stdout })
-    //     if (!dbOptions?.removeOldBackup)
-    //         return console.log(`Database backup created at ${newBackupPath}`);
-    //     // check for remove old backup after keeping # of days given in configuration
-    //     if (fs.existsSync(oldBackupPath)) {
-    //         try {
-    //             const removeRes = await exec("rm -rf " + oldBackupPath);
-    //             console.log({ removeRes });
-    //             console.log("Old backup removed: " + oldBackupPath);
-    //         } catch (e) {
-    //             console.log("removing error", e)
-    //         }
-    //     }
-
-    //     return console.log(`Database backup created at ${newBackupPath}`);
-    // } catch (e) {
-    //     console.log("backup error", e)
-    //     console.timeEnd("Database Backup Took:")
-    // }
 }
