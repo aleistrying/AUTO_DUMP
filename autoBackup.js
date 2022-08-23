@@ -50,7 +50,11 @@ exports.dbAutoBackUp = () => {
         ` --dumpDbUsersAndRoles${dbOptions.gzipped ? " --gzip" : ""} --out ${newBackupPath}`); // Command for mongodb dump process
 
     console.time("Database Backup Took:")
-    exec(cmd, (error, stdout, stderr) => {
+    // exec().on("message", (message) => {
+    //     console.log(message);
+    // }) 
+    const process = exec(cmd, (error, stdout, stderr) => {
+        // console.log("OUT" + stdout, "ERR" + stderr);
         if (error) {
             console.error(`Error: ${error}`);
             console.timeEnd("Database Backup Took:");
@@ -69,4 +73,17 @@ exports.dbAutoBackUp = () => {
             }
         }
     });
+    // process.stdout.on('data', (data) => {
+    //     console.log(`out, ${data}`);
+    // })
+    //log the data that goes throught the stderr
+    process.stderr.on('data', (data) => {
+        console.log(data);
+    })
+    // process.addListener("message", (message) => {
+    //     console.log("other", message);
+    // })
+    // process.on("message", (message) => {
+    //     console.log("mesg", message);
+    // })
 }
